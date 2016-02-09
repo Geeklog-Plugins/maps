@@ -577,7 +577,7 @@ function plugin_chkVersion_maps()
 */
 function plugin_upgrade_maps()
 {
-    global $_CONF, $_TABLES;
+    global $_CONF, $_TABLES, $_MAPS_CONF;
 
     $installed_version = DB_getItem($_TABLES['plugins'], 'pi_version',
                                     "pi_name = 'maps'");
@@ -807,6 +807,24 @@ function plugin_upgrade_maps()
             // update plugin version number
             DB_query("UPDATE {$_TABLES['plugins']} SET pi_version = '$code_version', pi_gl_version = '$installed_version' WHERE pi_name = 'maps'");
 			COM_errorLog( "Updated maps plugin from v$installed_version to v$code_version", 1 );
+            
+            //move public_html/maps to custom folder if needed
+            if ($_MAPS_CONF['maps_folder'] != 'maps' && $_MAPS_CONF['maps_folder'] != '') {
+                if ( rename($_CONF['path_html'] . $_MAPS_CONF['maps_folder'],$_CONF['path_html'] . $_MAPS_CONF['maps_folder'].'_old') ) {
+                   COM_errorLog("MAPS - Renamed {$_MAPS_CONF['maps_folder']} folder." );
+                } else {
+                  COM_errorLog("MAPS - Can't rename {$_MAPS_CONF['maps_folder']} folder." );
+                }
+                sleep (5);
+                if( rename($_CONF['path_html'] . 'maps',$_CONF['path_html'] . $_MAPS_CONF['maps_folder']) ) {
+                   COM_errorLog("MAPS - Moved maps files to {$_MAPS_CONF['maps_folder']} folder." );
+                } else {
+                  COM_errorLog("MAPS - Can't move maps files to {$_MAPS_CONF['maps_folder']} folder." );
+                }
+                MAPS_delTree($_CONF['path_html'] . $_MAPS_CONF['maps_folder'].'_old');
+            }
+            
+            
             /* This code is for statistics ONLY */
             $message =  'Completed maps plugin upgrade: ' . date('m d Y',time()) . "   AT " . date('H:i', time()) . "\n";
             $message .= 'Site: ' . $_CONF['site_url'] . ' and Sitename: ' . $_CONF['site_name'] . "\n";
@@ -814,6 +832,14 @@ function plugin_upgrade_maps()
     }
     return true;
 }
+
+function MAPS_delTree($dir) {
+   $files = array_diff(scandir($dir), array('.','..'));
+    foreach ($files as $file) {
+      (is_dir("$dir/$file") && !is_link($dir)) ? MAPS_delTree("$dir/$file") : unlink("$dir/$file");
+    }
+    return rmdir($dir);
+} 
 
 /**
 * Automatic uninstall function for plugins
