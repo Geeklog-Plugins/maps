@@ -38,7 +38,7 @@
 require_once '../../../lib-common.php';
 require_once '../../auth.inc.php';
 
-//echo COM_Debug($_POST);
+MAPS_getheadercode();
 
 $display = '';
 

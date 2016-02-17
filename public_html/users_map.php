@@ -43,6 +43,8 @@ if (!in_array('maps', $_PLUGINS)) {
     exit;
 }
 
+MAPS_getheadercode();
+
 // Ensure user has the rights to access this page
 if (COM_isAnonUser() && (($_CONF['loginrequired'] == 1) || ($_MAPS_CONF['maps_login_required'] == 1))) {
 	$display .= COM_siteHeader('');

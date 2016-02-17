@@ -41,6 +41,8 @@ require_once '../../../lib-common.php';
 require_once '../../auth.inc.php';
 require_once 'edit_functions.php';
 
+MAPS_getheadercode();
+
 $display = '';
 
 // Ensure user even has the rights to access this page

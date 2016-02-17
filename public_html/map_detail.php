@@ -43,6 +43,8 @@ if (!in_array('maps', $_PLUGINS)) {
     exit;
 }
 
+MAPS_getheadercode();
+
 // MAIN
 
 $display = '';

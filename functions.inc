@@ -71,17 +71,10 @@ require_once $_CONF['path'].'plugins/maps/maps.php';
 
 function plugin_getheadercode_maps()
 {
-    global $_CONF, $_MAPS_CONF, $_SCRIPTS, $_PLUGINS,$_TABLES;
-    
-	$_SCRIPTS->setCSSFile('maps_css', '/' . $_MAPS_CONF['maps_folder'] . '/maps.css');
-	$_SCRIPTS->setCSSFile('datepicker_ui', '/layout/' . $_CONF['theme'] . '/jquery_ui/jquery.ui.datepicker.css');
-    $_SCRIPTS->setJavaScriptFile('maps_iconmaker', '/' . $_MAPS_CONF['maps_folder'] . '/js/mapiconmaker.js', false);
-	$_SCRIPTS->setJavaScriptLibrary('jquery');
+    global $_MAPS_CONF, $_SCRIPTS, $_PLUGINS;
 	
-	$js = '<script src= "http://maps.googleapis.com/maps/api/js?key=' . $_MAPS_CONF['google_api_key'] . '&amp;libraries=adsense&amp;sensor=false" type="text/javascript"> </script>';
-	
-	$_SCRIPTS->setJavaScript($js, false, false);
-	$url = COM_getCurrentURL();
+    //Maps for calendar plugin
+    $url = COM_getCurrentURL();
     
     if ( ( stripos($url, 'calendar/index.php') !== FALSE  || stripos($url, 'event.php') !== FALSE && $_GET['eid'] != '') && in_array('calendar', $_PLUGINS) && $_MAPS_CONF['display_events_map'] )
     {
@@ -110,6 +103,20 @@ function plugin_getheadercode_maps()
 	$_SCRIPTS->setJavaScript($str, true, true);
 
     return;
+}
+
+function MAPS_getheadercode () {
+    
+    global $_CONF, $_MAPS_CONF, $_SCRIPTS;
+    
+	$_SCRIPTS->setCSSFile('maps_css', '/' . $_MAPS_CONF['maps_folder'] . '/maps.css');
+	$_SCRIPTS->setCSSFile('datepicker_ui', '/layout/' . $_CONF['theme'] . '/jquery_ui/jquery.ui.datepicker.css');
+    $_SCRIPTS->setJavaScriptFile('maps_iconmaker', '/' . $_MAPS_CONF['maps_folder'] . '/js/mapiconmaker.js', false);
+	$_SCRIPTS->setJavaScriptLibrary('jquery');
+	
+	$js = '<script src= "http://maps.googleapis.com/maps/api/js?key=' . $_MAPS_CONF['google_api_key'] . '&amp;libraries=adsense&amp;sensor=false" type="text/javascript"> </script>';
+	
+	$_SCRIPTS->setJavaScript($js, false, false);
 }
 
 /**
@@ -244,6 +251,7 @@ function plugin_autotags_maps($op, $content = '', $autotag = '')
 		
     case 'parse':
         $HTML = '';
+        MAPS_getheadercode ();
         switch( $autotag['tag'] ) {
             case 'geo' :
                 $option = COM_applyFilter($autotag['parm1']);

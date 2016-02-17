@@ -51,6 +51,8 @@ if (! SEC_hasRights('maps.admin')) {
     exit;
 }
 
+MAPS_getheadercode();
+
 // Incoming variable filter
 $vars = array('mode' => 'alpha',
               'id' => 'alpha',
