@@ -78,6 +78,10 @@ function plugin_getheadercode_maps()
     
     if ( ( stripos($url, 'calendar/index.php') !== FALSE  || stripos($url, 'event.php') !== FALSE && $_GET['eid'] != '') && in_array('calendar', $_PLUGINS) && $_MAPS_CONF['display_events_map'] )
     {
+        $js = '<script src= "http://maps.googleapis.com/maps/api/js?key=' . $_MAPS_CONF['google_api_key'] . '&amp;libraries=adsense&amp;sensor=false" type="text/javascript"> </script>';
+        
+        $_SCRIPTS->setJavaScript($js, false, false);
+        
         $js_events_map = MAPS_displayEventsMap(false);
         
         $_SCRIPTS->setJavaScript($js_events_map, false, false);
