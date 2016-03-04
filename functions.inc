@@ -78,32 +78,30 @@ function plugin_getheadercode_maps()
     
     if ( ( stripos($url, 'calendar/index.php') !== FALSE  || stripos($url, 'event.php') !== FALSE && $_GET['eid'] != '') && in_array('calendar', $_PLUGINS) && $_MAPS_CONF['display_events_map'] )
     {
-        $js = '<script src= "http://maps.googleapis.com/maps/api/js?key=' . $_MAPS_CONF['google_api_key'] . '&amp;libraries=adsense&amp;sensor=false" type="text/javascript"> </script>';
-        
-        $_SCRIPTS->setJavaScript($js, false, false);
-        
+       
+        $_SCRIPTS->setJavaScriptLibrary('jquery');
+        $_SCRIPTS->setJavaScript('<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=' . $_MAPS_CONF['google_api_key'] . '&amp;libraries=adsense"></script>', false, false);
         $js_events_map = MAPS_displayEventsMap(false);
-        
         $_SCRIPTS->setJavaScript($js_events_map, false, false);
         
-        $str .= '    jQuery(document).ready(function() {' . LB;
-        
         if (stripos($url, 'calendar/index.php') !== FALSE ) {
+            $str .= '    jQuery(document).ready(function() {' . LB;
             $str .= '        jQuery(\'.cal-header\').after(\'<div id="map_contener_mevents"><div id="map_canvas_mevents"></div></div>\');' . LB;
+            $str .= '    });' . LB;
         }
 
         if (stripos($url, 'event.php') !== FALSE && $_GET['eid'] != '') {
             // get eid
             $eid = addslashes ($_GET['eid']);
-            
+            $str .= '    jQuery(document).ready(function() {' . LB;
             $js_one_event = MAPS_displayEventsMap(false, $eid);
             $_SCRIPTS->setJavaScript($js_one_event, false, false);
 
             if ($eid != '')  $str .= '        jQuery(\'.location\').append(\'<div style="margin:10px 0px;" id="map_contener_mevents"><div id="map_canvas_mevents"></div></div>\');' . LB;
+            $str .= '    });' . LB;
         }
-        $str .= '    });' . LB;
     }
-	
+
 	$_SCRIPTS->setJavaScript($str, true, true);
 
     return;
@@ -393,6 +391,7 @@ function plugin_autotags_maps($op, $content = '', $autotag = '')
                 break;
                 
             case 'marker' :
+                
                 $mkid = COM_applyFilter($autotag['parm1']);
                 if (! empty($mkid)) {
                     $sql = "SELECT * FROM {$_TABLES['maps_markers']} WHERE mkid = {$mkid} LIMIT 1";
@@ -460,9 +459,13 @@ function MAPS_getAds ($mid) {
 */
 function plugin_profileblocksdisplay_maps ($uid)
 {
-    global $_CONF, $_MAPS_CONF, $_TABLES, $LANG_MAPS_1;
+    global $_CONF, $_MAPS_CONF, $_TABLES, $LANG_MAPS_1, $_SCRIPTS;
     
     $retval = '';
+    $gid = '';
+    
+    $_SCRIPTS->setJavaScriptLibrary('jquery');
+    $_SCRIPTS->setJavaScript('<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=' . $_MAPS_CONF['google_api_key'] . '&amp;libraries=adsense"></script>');
     
     if ($_MAPS_CONF['display_geo_profile'] == 0 || $_MAPS_CONF['google_api_key'] == '' ||
     $_MAPS_CONF['url_geocode'] == '') {
@@ -475,11 +478,12 @@ function plugin_profileblocksdisplay_maps ($uid)
 		if (! empty($address)) {
 			//upaded for mysql 5.1
 			MAPS_getDBCoords($gid, $address, $lat, $lng) ;
-			
+			$address = addslashes($address);
 			$T = COM_newTemplate($_CONF['path'] . 'plugins/maps/templates');
 			$T->set_file('page', 'geo_profile.thtml');
 			$T->set_var('gid', $gid);
 			$T->set_var('address', addslashes($address));
+            
 			$lat = str_replace(",",".",$lat);
 			$lng = str_replace(",",".",$lng);
 			$T->set_var('lat', $lat);
@@ -497,14 +501,9 @@ function plugin_profileblocksdisplay_maps ($uid)
 			} else {
 			$T->set_var('show_directions_geo', 'block');
 			}
-			$T->set_var('error_address_empty', $LANG_MAPS_1['error_address_empty']);
-			$T->set_var('error_invalid_address', $LANG_MAPS_1['error_invalid_address']);
-			$T->set_var('error_google_error', $LANG_MAPS_1['error_google_error']);
-			$T->set_var('error_no_map_info', $LANG_MAPS_1['error_no_map_info']);
 			
 			//Ads			
 			$ads = MAPS_getAds ($gid);
-			$T->set_var('ads', $ads);
 			
 			$T->set_var('need_directions', $LANG_MAPS_1['need_directions']);
 			$T->set_var('get_directions', $LANG_MAPS_1['get_directions']);
@@ -513,6 +512,112 @@ function plugin_profileblocksdisplay_maps ($uid)
 			$retval .= $T->finish($T->get_var('output'));
 		}
     }
+    
+    $js = "
+            
+        jQuery(document).ready(function () {
+            
+            /* Error messages for possible errors */
+            var error_address_empty{$gid} 	= '{$LANG_MAPS_1['error_address_empty']}';
+            var error_invalid_address{$gid} 	= '{$LANG_MAPS_1['error_invalid_address']}'; 
+            var error_google_error{$gid} 	= '{$LANG_MAPS_1['error_google_error']}';
+            var error_no_map_info{$gid}		= '{$LANG_MAPS_1['error_no_map_info']}';
+            
+            var default_address{$gid} = '{$address}';
+            var map{$gid};
+
+            var directionsDisplay;
+        
+            var current_address{$gid} = null; /* Current address we are displaying, we save it here for directions */
+            var geocoder{$gid}		 = null; /* Instance of Google Deocoder object */
+            var gdir{$gid}			 = null; /* Instance of Google Directions object */
+            var map_height{$gid}		= '{$_MAPS_CONF['map_height_profile']}';
+            
+            var adUnit_{$gid};
+            
+            /* Initialize the map */
+            function initializeGMap{$gid}() {
+
+                current_address{$gid} = default_address{$gid};		
+                
+                //Map
+                map{$gid} = new google.maps.Map(document.getElementById('map_canvas{$gid}'), {
+                    center: new google.maps.LatLng({$lat}, {$lng}),
+                    zoom: {$_MAPS_CONF['zoom_profile']},
+                    mapTypeId: google.maps.MapTypeId.{$_MAPS_CONF['global_type']}
+                });
+            
+                
+                var marker{$gid} = new google.maps.Marker({
+                    position: new google.maps.LatLng({$lat}, {$lng}),
+                    map: map{$gid},
+                    title: \"{$address}\",
+                    animation: google.maps.Animation.DROP,
+                });
+                
+                {$ads}
+                
+                // Initialize the directions display
+                  directionsDisplay = new google.maps.DirectionsRenderer(
+                  { 
+                    map: map{$gid},
+                    panel : document.getElementById('directions{$gid}')
+                  });
+
+            }
+            
+            google.maps.event.addDomListener(window, 'load', initializeGMap{$gid});
+            
+            // Get the directions
+            function get_directions{$gid}() {
+               /**
+                 * Delete the contents of 'directions' DIV first 
+                 * because user might ask for directions more than once.
+                **/
+              document.getElementById('directions{$gid}').innerHTML = '';
+              
+              // Initialize the directions service
+              var directionsService{$gid} = new google.maps.DirectionsService();
+              google.maps.event.addListener(directionsService{$gid}, 'error', handleErrors);
+              
+              var start = document.getElementById('from_address{$gid}').value;
+
+              var request = {
+                origin: start, 
+                destination: current_address{$gid},
+                travelMode: google.maps.DirectionsTravelMode.DRIVING
+              };
+              
+              directionsService{$gid}.route(request, function(response, status) {
+                if (status == google.maps.DirectionsStatus.OK) {
+                  directionsDisplay.setDirections(response);
+                  setTimeout('window.scrollBy(0,map_height{$gid})', 500);
+                } else {
+                  alert('Error generating directions');
+                }
+              });
+            }	
+            
+            /* This will handle the errors might happen while retrieving the directions */
+            function handleErrors(){
+                if( directionsService{$gid}.getStatus().code == G_GEO_UNKNOWN_ADDRESS )
+                    alert(error_invalid_address{$gid});
+                else if( directionsService{$gid}.getStatus().code == G_GEO_SERVER_ERROR )
+                    alert(error_google_error{$gid});
+                else if( directionsService{$gid}.getStatus().code == G_GEO_MISSING_QUERY )
+                    alert(error_address_empty{$gid});
+                else 
+                    alert(error_invalid_address{$gid});
+            }
+            
+            /* This function will be called when the directions are loaded */
+            function onGDirectionsLoad(){
+                /* We will simple scroll down to the directions, but with a little delay so it's loaded */
+                setTimeout('window.scrollBy(0,map_height{$gid})', 500);
+            }
+        });";
+        
+     $_SCRIPTS->setJavaScript($js , true);
  
     return $retval;
 }
@@ -823,15 +928,18 @@ function plugin_upgrade_maps()
             //move public_html/maps to custom folder if needed
             if ($_MAPS_CONF['maps_folder'] != 'maps' && $_MAPS_CONF['maps_folder'] != '') {
                 if ( rename($_CONF['path_html'] . $_MAPS_CONF['maps_folder'],$_CONF['path_html'] . $_MAPS_CONF['maps_folder'].'_old') ) {
-                   COM_errorLog("MAPS - Renamed {$_MAPS_CONF['maps_folder']} folder." );
+                     COM_errorLog("MAPS - Renamed {$_MAPS_CONF['maps_folder']} folder." );
                 } else {
-                  COM_errorLog("MAPS - Can't rename {$_MAPS_CONF['maps_folder']} folder." );
+                    COM_errorLog("MAPS - Can't rename {$_MAPS_CONF['maps_folder']} folder." );
                 }
                 sleep (5);
                 if( rename($_CONF['path_html'] . 'maps',$_CONF['path_html'] . $_MAPS_CONF['maps_folder']) ) {
-                   COM_errorLog("MAPS - Moved maps files to {$_MAPS_CONF['maps_folder']} folder." );
+                     COM_errorLog("MAPS - Moved maps files to {$_MAPS_CONF['maps_folder']} folder." );
                 } else {
-                  COM_errorLog("MAPS - Can't move maps files to {$_MAPS_CONF['maps_folder']} folder." );
+                    COM_errorLog("MAPS - Can't move maps files to {$_MAPS_CONF['maps_folder']} folder." );
+                    // For ftp update
+                    rename($_CONF['path_html'] . $_MAPS_CONF['maps_folder'].'_old', $_CONF['path_html'] . $_MAPS_CONF['maps_folder']);
+                    COM_errorLog("MAPS - Check your {$_MAPS_CONF['maps_folder']} folder." );
                 }
                 MAPS_delTree($_CONF['path_html'] . $_MAPS_CONF['maps_folder'].'_old');
             }
@@ -1674,6 +1782,7 @@ function MAPS_getMarkers ($sql, $primaryColor, $strokecolor, $label, $label_colo
 {  
     global $_TABLES, $LANG_MAPS_1, $_MAPS_CONF, $_CONF;
 	$map2  = $map;
+    
 
     $markers =  '' . LB;
   
@@ -1701,6 +1810,7 @@ function MAPS_getMarkers ($sql, $primaryColor, $strokecolor, $label, $label_colo
 function MAPS_renderMarker ($marker, $primaryColor, $strokecolor, $label, $label_color, $mapname='', $field_tab, $category='', $mapid=0, $infos=true, $map3)
 {
     global $_CONF, $_MAPS_CONF, $LANG_MAPS_1, $_TABLES, $_USER;
+    
 	$use_icon = $map3['mmk_default']; // 0 false, 1 true
 	$icon_id = $map3['mmk_icon'];
 
@@ -1831,7 +1941,7 @@ function MAPS_renderMarker ($marker, $primaryColor, $strokecolor, $label, $label
 		$limited = '';
 		if ( $marker['validity'] == 1 && SEC_hasRights('maps.admin') && ( strtotime($marker['validity_end']) > time() || strtotime($marker['validity_start']) < time() ) ) $limited = ' <span style="color:red">Limited</span>';
 		
-		$template->set_var('name', '<strong><span style="text-transform:uppercase;">' . $marker['name'] . '</span></strong>' . $limited);
+		$template->set_var('name', '<strong><span style="text-transform:uppercase;">' . addslashes($marker['name']) . '</span></strong>' . $limited);
 		
 		//description
 		(strlen($marker['description'])>150) ? $dots = '...' : $dots = '' ;
@@ -1897,7 +2007,7 @@ function MAPS_renderMarker ($marker, $primaryColor, $strokecolor, $label, $label
 			$template = COM_newTemplate($_CONF['path'] . 'plugins/maps/templates');
 			$template->set_file(array('presentation_event' => 'presentation_tab_event.thtml'));
 			
-			$template->set_var('name', '<strong><span style="text-transform:uppercase;">' . $marker['name'] . '</span></strong>');
+			$template->set_var('name', '<strong><span style="text-transform:uppercase;">' . addslashes($marker['name']) . '</span></strong>');
 			
 			//description
 			($marker['description'] != '') ? $description = '<p>' . preg_replace( "/\r|\n/", "", nl2br(mb_substr ( $marker['description'] ,0, 150 ))) . '...<br' .  XHTML . '>' : '<p>';
@@ -1912,7 +2022,7 @@ function MAPS_renderMarker ($marker, $primaryColor, $strokecolor, $label, $label
 			$presentation .= $template->parse('output', 'presentation_event');
 			
 			$markers .= LB . '				var infowindow' . $marker['mkid'] . ' = new google.maps.InfoWindow({
-				  content: \'' . $presentation . '\'
+				  content: \'' . addslashes($presentation) . '\'
 			  });' . LB;
 			
 			// Adding a click-event to the marker  
