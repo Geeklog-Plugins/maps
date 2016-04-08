@@ -73,14 +73,16 @@ function plugin_getheadercode_maps()
 {
     global $_MAPS_CONF, $_SCRIPTS, $_PLUGINS;
 	
+    $_SCRIPTS->setJavaScriptLibrary('jquery');   
+    $_SCRIPTS->setJavaScript('<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=' . $_MAPS_CONF['google_api_key'] . '&amp;libraries=adsense"></script>', false, false);
+    
     //Maps for calendar plugin
     $url = COM_getCurrentURL();
     
     if ( ( stripos($url, 'calendar/index.php') !== FALSE  || stripos($url, 'event.php') !== FALSE && $_GET['eid'] != '') && in_array('calendar', $_PLUGINS) && $_MAPS_CONF['display_events_map'] )
     {
        
-        $_SCRIPTS->setJavaScriptLibrary('jquery');
-        $_SCRIPTS->setJavaScript('<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?key=' . $_MAPS_CONF['google_api_key'] . '&amp;libraries=adsense"></script>', false, false);
+        
         $js_events_map = MAPS_displayEventsMap(false);
         $_SCRIPTS->setJavaScript($js_events_map, false, false);
         
@@ -114,11 +116,7 @@ function MAPS_getheadercode () {
 	$_SCRIPTS->setCSSFile('maps_css', '/' . $_MAPS_CONF['maps_folder'] . '/maps.css');
 	$_SCRIPTS->setCSSFile('datepicker_ui', '/layout/' . $_CONF['theme'] . '/jquery_ui/jquery.ui.datepicker.css');
     $_SCRIPTS->setJavaScriptFile('maps_iconmaker', '/' . $_MAPS_CONF['maps_folder'] . '/js/mapiconmaker.js', false);
-	$_SCRIPTS->setJavaScriptLibrary('jquery');
-	
-	$js = '<script src= "http://maps.googleapis.com/maps/api/js?key=' . $_MAPS_CONF['google_api_key'] . '&amp;libraries=adsense&amp;sensor=false" type="text/javascript"> </script>';
-	
-	$_SCRIPTS->setJavaScript($js, false, false);
+
 }
 
 /**
@@ -253,7 +251,7 @@ function plugin_autotags_maps($op, $content = '', $autotag = '')
 		
     case 'parse':
         $HTML = '';
-        MAPS_getheadercode ();
+        MAPS_getheadercode();
         switch( $autotag['tag'] ) {
             case 'geo' :
                 $option = COM_applyFilter($autotag['parm1']);
@@ -508,8 +506,10 @@ function plugin_profileblocksdisplay_maps ($uid)
 			$T->set_var('need_directions', $LANG_MAPS_1['need_directions']);
 			$T->set_var('get_directions', $LANG_MAPS_1['get_directions']);
 			$T->parse('output','page');
-			$retval .= '<h2>' . $LANG_MAPS_1['profile_title'] . '</h2>';
+            
+			$retval .= COM_startBlock( $LANG_MAPS_1['profile_title'] );
 			$retval .= $T->finish($T->get_var('output'));
+            $retval .= COM_endBlock();
 		}
     }
     
@@ -1805,7 +1805,7 @@ function MAPS_getMarkers ($sql, $primaryColor, $strokecolor, $label, $label_colo
   return $markers;
 }
 
-// $info display or not infowindow
+// $infos display or not infowindow
 
 function MAPS_renderMarker ($marker, $primaryColor, $strokecolor, $label, $label_color, $mapname='', $field_tab, $category='', $mapid=0, $infos=true, $map3)
 {
@@ -2007,11 +2007,12 @@ function MAPS_renderMarker ($marker, $primaryColor, $strokecolor, $label, $label
 			$template = COM_newTemplate($_CONF['path'] . 'plugins/maps/templates');
 			$template->set_file(array('presentation_event' => 'presentation_tab_event.thtml'));
 			
-			$template->set_var('name', '<strong><span style="text-transform:uppercase;">' . addslashes($marker['name']) . '</span></strong>');
+			$template->set_var('name', '<strong><span style="text-transform:uppercase;">' . $marker['name'] . '</span></strong>');
 			
 			//description
-			($marker['description'] != '') ? $description = '<p>' . preg_replace( "/\r|\n/", "", nl2br(mb_substr ( $marker['description'] ,0, 150 ))) . '...<br' .  XHTML . '>' : '<p>';
-			$template->set_var('description', addslashes($description));
+            (strlen($marker['description'])>150) ? $dots = '...' : $dots = '' ;
+			($marker['description'] != '') ? $description = '<p>' . preg_replace( "/\r|\n/", "", nl2br(mb_substr ( $marker['description'] ,0, 150 ))) . $dots . '</p>' : '';
+			$template->set_var('description', $description);
 			
 			//Read more  
 			$template->set_var('read_more', '<a href="'. $_CONF['site_url'] .'/calendar/event.php?eid=' . $marker['mkid'] . '">' . $LANG_MAPS_1['read_more'] . '</a></p>');
