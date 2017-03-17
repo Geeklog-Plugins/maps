@@ -316,9 +316,7 @@ switch ($_REQUEST['mode']) {
 			$msg = $LANG_MAPS_1['deletion_fail'];
 		}
 		// delete complete, return to map list
-		echo COM_refresh($_CONF['site_url'] . "/admin/plugins/maps/overlays.php?msg=$msg");
-
-        exit();
+		COM_redirect($_CONF['site_url'] . "/admin/plugins/maps/overlays.php?msg=$msg");
         break;
 
     case 'save':
@@ -366,8 +364,7 @@ switch ($_REQUEST['mode']) {
 			MAPS_saveOverlayImage($_REQUEST, $_FILES, $oid);
 		}
         // save complete, return to overlays list
-        echo COM_refresh($_CONF['site_admin_url'] . "/plugins/maps/overlays.php?msg=" . urlencode($msg));
-        exit();
+        COM_redirect($_CONF['site_admin_url'] . "/plugins/maps/overlays.php?msg=" . urlencode($msg));
         break;
 
     case 'edit':
@@ -378,7 +375,7 @@ switch ($_REQUEST['mode']) {
             $A = DB_fetchArray($res);
             $display .= MAPS_getOverlayForm($A);
         } else {
-            echo COM_refresh($_CONF['site_url']);
+            COM_redirect($_CONF['site_url']);
         }
         break;
 	
