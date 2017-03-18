@@ -1,4 +1,4 @@
-
+{# begin {templatelocation} #}
 
 <div>
 	<form action="#" onsubmit="codeAddress(); return false">
@@ -61,3 +61,6 @@
 		</div>
 	</form>
 </div>
+
+{# end {templatelocation} #}
+
