@@ -1,3 +1,5 @@
+{# begin {templatelocation} #}
+
 <script language="JavaScript">
     checked = false;
     function checkedAllExport () {
@@ -55,3 +57,5 @@
 		
 	</form>
 </div>
+
+{# end {templatelocation} #}

@@ -1,3 +1,5 @@
+{# begin {templatelocation} #}
+
 <div class="tabs">
 <!-- tabs -->
 <ul class="tabNavigation">
@@ -108,3 +110,5 @@
 </div>
 
 </div>
+
+{# end {templatelocation} #}

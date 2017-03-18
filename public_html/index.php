@@ -39,8 +39,7 @@ require_once '../lib-common.php';
 
 // take user back to the homepage if the plugin is not active
 if (!in_array('maps', $_PLUGINS)) {
-    echo COM_refresh($_CONF['site_url'] . '/index.php');
-    exit;
+    COM_redirect($_CONF['site_url'] . '/index.php');
 }
 
 MAPS_getheadercode();
@@ -272,21 +271,21 @@ switch ($_REQUEST['mode']) {
 			$display .= MAPS_getGlobalMap();
  
 		} else {
-			echo COM_refresh($_MAPS_CONF['site_url'] . '/index.php');
+			COM_redirect($_MAPS_CONF['site_url'] . '/index.php');
 		}
         break;
 	case 'markers':
 	    if ( ($_REQUEST['mid'] >= 0) ) {
 		    $display .= MAPS_ListMarkers($_REQUEST['mid']);
 		} else {
-			echo COM_refresh($_MAPS_CONF['site_url'] . '/index.php');
+			COM_redirect($_MAPS_CONF['site_url'] . '/index.php');
 		}
 	    break;
 	case 'marker':
 	    if ( isset($_REQUEST['mkid']) && $_REQUEST['mkid'] != '' && function_exists('MAPS_proViewMarker') ) {
 		    $display .= MAPS_proViewMarker($_REQUEST['mkid']);
 		} else {
-			echo COM_refresh($_MAPS_CONF['site_url'] . '/index.php');
+			COM_redirect($_MAPS_CONF['site_url'] . '/index.php');
 		}
 	    break;
 

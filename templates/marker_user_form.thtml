@@ -1,3 +1,5 @@
+{# begin {templatelocation} #}
+
 <div>
 
 	<p>{edit_marker_text}        
@@ -52,3 +54,5 @@
 		</div>
 	</form>
 </div>
+
+{# end {templatelocation} #}
